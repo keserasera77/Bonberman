@@ -1,6 +1,15 @@
 #pragma once
 
+namespace Sequence { 
+namespace Game {
+class Parent;
+}
+}
+
+class Player;
 class Image;
+class Object;
+class Bomb;
 
 template<class T> class Array2D {
 public:
@@ -28,22 +37,27 @@ private:
 
 class State {
 public:
-	State(const char* stageData, int stageSize);
-	//~State();
-	void update(unsigned frameTime);
+	State(Sequence::Game::Parent* parent);
+	~State();
+	void update(Sequence::Game::Parent* parent);
 	void drawStage() const;
+	void drawPlayers() const;
 	bool clearCheck() const;
-	const char* mStageName;
+	void movePlayers() const;
+	void proceedBombTime();
+	void putBomb(Player* player);
+	void fireBomb(Player* player);
 private:
-  class Object;
-	class Sequence;
-	void setSize(const char* stage, int size);
+	void setSize(int width, int height);
 
 	int mStageWidth;
 	int mStageHeight;
-	char* mStageData;
-	Image* mObjectImage; //画像データ
-	int mPx, mPy; //プレイヤーの座標
+	Image* mImage; //画像データ
 	Array2D<Object> mObjects;
-  double mMoveCount; //動き始めてから何画素移動したか。 0 <= mMovingPlace < 32
-};
+	Player* mPlayer1; 
+	Player* mPlayer2;
+	Player** mEnemys;
+	Bomb** mBombs;
+	int mNumOfBomb;
+	int mNumOfEnemy;
+ };

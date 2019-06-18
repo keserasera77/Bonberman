@@ -31,8 +31,10 @@ Child* Game::update(Parent* parent) {
 		return next;
 	}
 
-	parent->getState()->update(f.previousFrameInterval());
+	parent->getState()->update(parent);
 	parent->getState()->drawStage();
+	parent->getState()->drawPlayers();
+
 
 	//ステージクリアーかチェック
 	if (parent->getState()->clearCheck()) {

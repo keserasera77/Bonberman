@@ -1,220 +1,178 @@
 ﻿#include "GameLib/Framework.h"
+#include "Sequence/Game/GameParent.h"
 #include "State.h"
 #include "Image.h"
-
-#include <algorithm>
+#include "Object.h"
 
 using namespace GameLib;
+namespace SG = Sequence::Game;
 
-const int CELL_EDGE = 32;
 const int MAX_MOVE_COUNT = 250;
 
-class State::Object {
-public:
-	enum Type {
-		OBJ_SPACE,
-		OBJ_WALL,
-		OBJ_GOAL,
-		OBJ_BLOCK,
-		OBJ_MAN,
+bool percent(int a);
 
-		OBJ_UNKNOWN,
-	};
-	enum ImageID {
-		IMAGE_ID_PLAYER,
-		IMAGE_ID_WALL,
-		IMAGE_ID_BLOCK,
-		IMAGE_ID_GOAL,
-		IMAGE_ID_SPACE,
-	};
+State::State(SG::Parent* parent) : mStageWidth(9), mStageHeight (7), mPlayer1(0), mPlayer2(0), mEnemys(new Player*), mBombs(new Bomb*), mNumOfBomb(0), mNumOfEnemy(0) {
+  //Framework f = Framework::instance();
 
-	Object() : mType(OBJ_WALL), mGoalFlag(false), mMoveX(0), mMoveY(0) {};
-	//~Object();
+	typedef SG::Parent::Mode Mode0;
+	const Mode0 mode1p = SG::Parent::MODE_1P;
+	const Mode0 mode2p = SG::Parent::MODE_2P;
 
-	Type mType;
-	bool mGoalFlag;
-	int mMoveX; //-1,0,1
-	int mMoveY; //-1,0,1
-
-	void set(char input) {
-			switch (input) {
-			case '#': mType = OBJ_WALL; break;
-			case ' ': mType = OBJ_SPACE; break;
-			case 'o': mType = OBJ_BLOCK; break;
-			case 'O': mType = OBJ_BLOCK; mGoalFlag = true; break;
-			case '.': mType = OBJ_SPACE; mGoalFlag = true; break;
-			case 'p': mType = OBJ_MAN; break;
-			case 'P': mType = OBJ_MAN; mGoalFlag = true; break;
-			case '\n': mType = OBJ_UNKNOWN; break; 
-			default: mType = OBJ_UNKNOWN; break;
-			}
-	}
-
-	//描画。背景描画
-	void drawBackground(int x, int y, const Image* image) const {
-		ImageID id = IMAGE_ID_SPACE;
-		//壁なら壁
-		if (mType == OBJ_WALL) {
-			drawCell(x, y, IMAGE_ID_WALL, image);
-		}
-		else {
-			if (mGoalFlag) {
-				drawCell(x, y, IMAGE_ID_GOAL, image);
-			}
-			else {
-				drawCell(x, y, IMAGE_ID_SPACE, image);
-			}
-		}
-	}
-	void drawForeground(int x, int y, const Image* image, int moveCount) const {
-		//動くのは人と荷物だけ。
-		ImageID id = IMAGE_ID_SPACE; //前景がないフラグとして使う
-		if (mType == OBJ_BLOCK) {
-			id = IMAGE_ID_BLOCK;
-		}
-		else if (mType == OBJ_MAN) {
-			id = IMAGE_ID_PLAYER;
-		}
-		if (id != IMAGE_ID_SPACE) { //背景以外なら
-			//移動を計算
-			const int m =  MAX_MOVE_COUNT;
-			int dx = (mMoveX * (m - moveCount) * CELL_EDGE) / m;
-			int dy = (mMoveY * (m - moveCount) * CELL_EDGE) / m;
-			image->drawPicture(x * CELL_EDGE - dx, y * CELL_EDGE - dy, id * CELL_EDGE, 0, CELL_EDGE, CELL_EDGE);
-		}
-	}
-
-	void drawCell(int x, int y, ImageID imageID, const Image* image) const {
-		image->drawPicture(CELL_EDGE * x, CELL_EDGE * y, imageID * CELL_EDGE, 0, CELL_EDGE, CELL_EDGE);
-	};
-
-	//移動をセット。第3引数は置き換わるタイプ
-	void move(int dx, int dy, Type replaced) {
-		mMoveX = dx;
-		mMoveY = dy;
-		mType = replaced;
-	}
-
-};
-
-State::State(const char* stageData, int stageSize) {
-
-	setSize(stageData, stageSize);
 	mObjects.setSize(mStageWidth, mStageHeight);
+	Mode0 mode = parent->mode();
 
-	int x=0, y=0;
-	for (int i = 0; i < stageSize; ++i) {
-		Object t;
-		bool goalFlag = false;
-		switch (stageData[i]) {
-		case '#': case ' ': case 'o': case 'O': case '.':
-			mObjects(x, y).set(stageData[i]);
-			++x;
-			break;
-		case 'p': case 'P':
-		  mPx = x; mPy = y; //人の位置の記憶
-			mObjects(x, y).set(stageData[i]);
-			++x;
-			break;
-		case '\n': x = 0; ++y; break; //改行処理
-		}
+	//ステージ自動生成
+	for (int y = 0 ; y < mStageHeight; y++) {
+		for (int x = 0; x < mStageWidth; x++) {
+			Object& o = mObjects(x, y);
+
+			//ステージは５＊５以上
+		  if (x == 0 || y == 0 || x == mStageWidth - 1 || y == mStageHeight - 1) o.set(Object::OBJ_WALL);//周りの壁
+			else if (x % 2 == 0 && y % 2 == 0) o.set(Object::OBJ_WALL); //通路の幅を1にする壁
+			else if ((x == 1 && y == 1) || (x == 1 && y == 2) || (x == 2 && y == 1)) o.set(Object::OBJ_SPACE); //1Pの居場所
+			else if ((mode == mode2p) && (x == mStageWidth-2 && y == mStageHeight-2 || x == mStageWidth-2 && y == mStageHeight-3 || x == mStageWidth-3 && y == mStageHeight-2)) o.set(Object::OBJ_SPACE); //2Pの居場所
+			//その他
+			else if (percent(85)) o.set(Object::OBJ_BLOCK);
+			else { 
+			  o.set(Object::OBJ_SPACE);
+				if (percent(40) && mode == mode1p){
+				  mEnemys[mNumOfEnemy] = new Player(Object::IMAGE_ID_ENEMY, mStageWidth, mStageHeight, x, y);
+				  mNumOfEnemy++;
+				}
+			}
+	  }
 	}
 
+	mEnemys[mNumOfEnemy] = 0; //番兵の配置
+
+	mBombs[0] = 0;
 	//画像の読み込み
-	mObjectImage = new Image("Image/Images.dds");
+	mImage = new Image("Image/Images.dds");
+
+	//プレイヤーの初期化,描画
+	mPlayer1 = new Player(Object::IMAGE_ID_1P, mStageWidth, mStageHeight);
+
+	if (mode == mode2p)  mPlayer2 = new Player(Object::IMAGE_ID_2P, mStageWidth, mStageHeight);
+
+	//ステージ生成時に定義されてる
+	//mEnemys[numOfEnemy] = new Player(Object::IMAGE_ID_ENEMY, mStageWidth, mStageHeight, x, y); 
 }
 
-void State::setSize(const char* stage, int size) {
-	int x = 0;
-	int y = 0;
-	for (int i = 0; i < size; i++) {
-		switch (stage[i]) {
-		case '#': case 'o': case 'O': case '.':
-		case 'p': case 'P': case ' ':
-			x++;
-			break;
-		case '\n':
-			y++;
-			mStageWidth = std::max(mStageWidth, x);
-			mStageHeight = std::max(mStageHeight, y);
-			x = 0;
-			break;
+State::~State() {
+	SAFE_DELETE(mImage); //画像データ
+	SAFE_DELETE(mPlayer1);
+	SAFE_DELETE(mPlayer2);
+	for (int i = 0; i < mNumOfEnemy; i++) SAFE_DELETE(mEnemys);
+	for (int i = 0, cnt = 0; cnt < mNumOfBomb; i++)  {
+	  if (mBombs[i] != 0){
+	    SAFE_DELETE(mBombs[i]);
+			cnt++;
 		}
 	}
+}
+
+void State::setSize(int width, int height) {
+	mStageWidth = width;
+	mStageHeight = height;
 }
 
 bool State::clearCheck() const {
-	for (int y = 0; y < mStageHeight; y++) {
-		for (int x = 0; x < mStageWidth; x++) {
-			if (mObjects(x, y).mType == Object::OBJ_BLOCK && mObjects(x, y).mGoalFlag == false) return false;
-		}
-	}
-	return true;
+	return false;
 }
 
-void State::drawStage() const {
-	//二段階に分けて描画する。まず背景を描画。
+void State::drawStage(/*Player* player*/) const {
 	for (int y = 0; y < mStageHeight; ++y) {
 		for (int x = 0; x < mStageWidth; ++x) {
-			mObjects(x, y).drawBackground(x, y, mObjectImage);
-		}
-	}
-	//次に前景を描画
-	for (int y = 0; y < mStageHeight; ++y) {
-		for (int x = 0; x < mStageWidth; ++x) {
-			mObjects(x, y).drawForeground(x, y, mObjectImage, mMoveCount); //mMoveCountを型変換によってfloorをだしてるのはわざと
-		}
+			mObjects(x, y).drawBackground(x, y, mImage);
+			mObjects(x, y).drawForeground(x, y, mImage);
+	  }
 	}
 }
 
-void State::update(unsigned frameTime) {
-	Framework f = Framework::instance();
-	int dPx = 0, dPy = 0;
+void State::drawPlayers() const {
 
-	if (mMoveCount >= MAX_MOVE_COUNT) {
-	mMoveCount = 0;
-		for (int y = 0; y < mStageHeight; y++) {
-			for (int x = 0; x < mStageWidth; x++) {
-				mObjects(x, y).mMoveX = 0; 
-				mObjects(x, y).mMoveY = 0;
+	mPlayer1->draw(mImage);
+	if (mPlayer2 != 0) mPlayer2->draw(mImage);
+	for (int i = 0; mEnemys[i] != 0 ; i++) mEnemys[i]->draw(mImage);
+	
+}
+
+void State::movePlayers() const{
+	mPlayer1->move();
+	if (mPlayer2 != 0) mPlayer2->move();
+	for (int i = 0; mEnemys[i] != 0; i++) mEnemys[i]->move();
+}
+
+void State::proceedBombTime() {
+	for (int i = 0, cnt = 0; cnt < mNumOfBomb; i++) {
+	  if (mBombs[i] != 0) {
+		  mBombs[i]->proceedTime();
+		  cnt++; 
+		}
+	}
+}
+
+void State::putBomb(Player* player) {
+  int i = 0;
+	if (player->putBomb()) {
+		while (i < mNumOfBomb) {
+		  if (mBombs[i] == 0) break;
+			i++;
+		}
+		mBombs[i] = new Bomb(player);
+		if (i >= mNumOfBomb) mBombs[i+1] = 0;
+		mNumOfBomb++;
+		mObjects(mBombs[i]->x(),mBombs[i]->y()).set(Object::OBJ_BOMB);
+	}
+}
+
+void State::fireBomb(Player* player) {
+	for (int i = 0, cnt = 0; cnt < mNumOfBomb; i++) {
+	  cout << "i = " << i << ", mNumOfBomb = " << mNumOfBomb << endl;
+		if (mBombs[i] != 0) {
+		  cout << mBombs[i]->time() << " ms" << endl;
+			int x = mBombs[i]->x(), y = mBombs[i]->y(); //ボムの位置
+
+			if (mBombs[i]->time() >= 3000) { //消火条件
+				cout << mBombs[i]->time() << " ms : in 3000 !!!" << endl;
+
+				mObjects(mBombs[i]->x(), mBombs[i]->y()).set(Object::OBJ_SPACE);
+				for (int j = 1; j <= mBombs[i]->fire() && mObjects(x + j, y).id() != Object::OBJ_WALL; j++) mObjects(x + j, y).set(Object::OBJ_SPACE);
+				for (int j = 1; j <= mBombs[i]->fire() && mObjects(x - j, y).id() != Object::OBJ_WALL; j++) mObjects(x - j, y).set(Object::OBJ_SPACE);
+				for (int j = 1; j <= mBombs[i]->fire() && mObjects(x, y + j).id() != Object::OBJ_WALL; j++) mObjects(x, y + j).set(Object::OBJ_SPACE);
+				for (int j = 1; j <= mBombs[i]->fire() && mObjects(x, y - j).id() != Object::OBJ_WALL; j++) mObjects(x, y - j).set(Object::OBJ_SPACE);
+
+				mNumOfBomb--;
+				SAFE_DELETE(mBombs[i]);
 			}
+			else if (mBombs[i]->time() >= 2000) { //発火条件
+
+				cout << mBombs[i]->time() << " ms : in 2000 !!!" << endl;
+				mObjects(x, y).set(Object::OBJ_FIRE_BOTH);
+				
+				for (int j = 1; j <= mBombs[i]->fire() && mObjects(x + j, y).id() != Object::OBJ_WALL; j++) mObjects(x + j, y).set(Object::OBJ_FIRE_WIDTH);
+				for (int j = 1; j <= mBombs[i]->fire() && mObjects(x - j, y).id() != Object::OBJ_WALL; j++) mObjects(x - j, y).set(Object::OBJ_FIRE_WIDTH);
+				for (int j = 1; j <= mBombs[i]->fire() && mObjects(x, y + j).id() != Object::OBJ_WALL; j++) mObjects(x, y + j).set(Object::OBJ_FIRE_HEIGHT);
+				for (int j = 1; j <= mBombs[i]->fire() && mObjects(x, y - j).id() != Object::OBJ_WALL; j++) mObjects(x, y - j).set(Object::OBJ_FIRE_HEIGHT);
+			  
+				player->incBomb();
+			}
+			cnt++; /**/
 		}
-	}
-	else if (mMoveCount > 0) { //移動中はステージの更新しない
-		mMoveCount += frameTime; 
-		if (mMoveCount > MAX_MOVE_COUNT) mMoveCount = MAX_MOVE_COUNT;
-		return;
 	}
 	
-	if (f.isKeyTriggered('a')) { dPx = -1;}
-	else if (f.isKeyTriggered('s')) { dPy = 1;}
-	else if (f.isKeyTriggered('d')) { dPx = 1;}
-	else if (f.isKeyTriggered('w')) { dPy = -1; }
-
-//範囲チェック
-if (mPx + dPx < 0 || mStageWidth <= mPx + dPx || mPy + dPy < 0 || mStageWidth <= mPy + dPy) return;
-
-switch (mObjects(mPx + dPx, mPy + dPy).mType) {
-case Object::OBJ_SPACE:
-	mObjects(mPx + dPx, mPy + dPy).move(dPx, dPy, Object::OBJ_MAN);
-	mObjects(mPx, mPy).move(dPx, dPy, Object::OBJ_SPACE);
-	mPx += dPx; mPy += dPy;
-	mMoveCount = 1; //人が動き始める
-	break;
-case Object::OBJ_BLOCK:
-
-	//範囲チェック
-	if (mPx + 2 * dPx < 0 || mStageWidth <= mPx + 2 * dPx || mPy + 2 * dPy < 0 || mStageWidth <= mPy + 2 * dPy) return;
-
-	switch (mObjects(mPx + 2 * dPx, mPy + 2 * dPy).mType) {
-		//OBJ_BLOCK,OBJ_WALLの場合はその場に残る
-	case Object::OBJ_SPACE:
-		mObjects(mPx + 2 * dPx, mPy + 2 * dPy).move(dPx, dPy, Object::OBJ_BLOCK);
-		mObjects(mPx + dPx, mPy + dPy).move(dPx, dPy, Object::OBJ_MAN);
-		mObjects(mPx, mPy).move(dPx, dPy, Object::OBJ_SPACE);
-		mPx += dPx; mPy += dPy;
-		mMoveCount = 1; //人が動いているという情報。移動描写時に使う。
-		break;
-	}
 }
+
+void State::update(SG::Parent* parent) {
+	Framework f = Framework::instance();
+
+	movePlayers();
+
+	if (f.isKeyTriggered('e')) putBomb(mPlayer1);
+	if (parent->mode() == SG::Parent::MODE_2P) if (f.isKeyTriggered('o')) putBomb(mPlayer2);
+
+	proceedBombTime();
+
+	fireBomb(mPlayer1);
+  if (parent->mode() == SG::Parent::MODE_2P) fireBomb(mPlayer2);
 }

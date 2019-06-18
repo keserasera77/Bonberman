@@ -52,7 +52,7 @@ void Parent::setStage(const char* data, int size) {
 }
 
 void Parent::initState() {
-  setState(new State(mStageData,mStageSize));
+  setState(new State(this));
 }
 
 Parent::Mode Parent::mode() const{

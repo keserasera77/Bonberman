@@ -19,13 +19,14 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\Soukonan5\Soukoban5\Soukoban5\Sequence\GameOver.cpp" />
     <ClCompile Include="Bomberman.cpp" />
     <ClCompile Include="File.cpp" />
     <ClCompile Include="Font.cpp" />
     <ClCompile Include="Image.cpp" />
+    <ClCompile Include="Object.cpp" />
     <ClCompile Include="Sequence\Child.cpp" />
     <ClCompile Include="Sequence\Ending.cpp" />
+    <ClCompile Include="Sequence\GameOver.cpp" />
     <ClCompile Include="Sequence\Game\Clear.cpp" />
     <ClCompile Include="Sequence\Game\Failure.cpp" />
     <ClCompile Include="Sequence\Game\Game.cpp" />
@@ -42,6 +43,7 @@
     <ClInclude Include="File.h" />
     <ClInclude Include="Font.h" />
     <ClInclude Include="Image.h" />
+    <ClInclude Include="Object.h" />
     <ClInclude Include="Sequence\Child.h" />
     <ClInclude Include="Sequence\Ending.h" />
     <ClInclude Include="Sequence\GameOver.h" />

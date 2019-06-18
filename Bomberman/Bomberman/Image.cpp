@@ -34,6 +34,7 @@ void Image::drawPicture(
 	for (int y = 0; y < height; y++) {
 		for (int x = 0; x < width; x++) {
 			//画面範囲チェック
+			if ((y + dstY) * windowWidth + (x + dstX) < 0) break;
 			if ((y + dstY) * windowWidth + (x + dstX) >= windowHeight * windowWidth) break;
 
 			unsigned src = mData[(y + srcY) * mWidth + (x + srcX)];
