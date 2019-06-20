@@ -1,6 +1,8 @@
 #pragma once
 
 class Image;
+class Bomb;
+template<class T> class Array2D;
 
 class Object {
 public:
@@ -28,8 +30,8 @@ public:
 		OBJ_SPACE,
 		OBJ_WALL,
 
-		ITEM_BOMB_UP,
-		ITEM_FIRE_UP,
+		OBJ_BOMB_UP,
+		OBJ_FIRE_UP,
 
 		OBJ_PLAYER,
 		OBJ_ENEMY,
@@ -56,7 +58,7 @@ class Player {
 public:
 	Player(Object::ImageID id, int width, int height);
 	Player(Object::ImageID id, int width, int height, int x, int y);
-	//~Player();
+	~Player();
 
 	Object::ImageID id() { return mId; }
 	int x() const { return mX; }
@@ -67,12 +69,15 @@ public:
 	void plusMaxBomb();
 	int fire() const { return mFire; }
 	void plusFire();
-	bool putBomb();
-	void incBomb();
+	void putBomb(Array2D<Object>& obj);
+	void fireBomb(Array2D<Object>& obj);
+	void proceedBombTime();
+	int haveBomb() const { return mHaveBomb;}
+
+	Bomb* bomb(int i) { return mBombs[i]; };
 
 
 	void draw(const Image* image) const;
-	//void drawSpaceOnPlayer(const Image* image) const;
 	void move();
 private:
 	Object::ImageID mId;
@@ -84,6 +89,7 @@ private:
 	int mFire;
 
 	int mHaveBomb;
+	Bomb** mBombs;
 };
 
 class Bomb {
@@ -95,9 +101,12 @@ public:
 
   int time() const { return mTime; }
 	int fire() const { return mFire; }
+	int itemFlag() const { return mItemFlag; }
+	void flagItem(int f);
 	void proceedTime();
 private:
   int mX, mY;
   int mTime;
 	int mFire;
+	int mItemFlag; // 4bit 上下左右の順で爆発後にアイテムを落とすかを決定。
 };

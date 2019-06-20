@@ -33,7 +33,6 @@ Child* Game::update(Parent* parent) {
 
 	parent->getState()->update(parent);
 	parent->getState()->drawStage();
-	parent->getState()->drawPlayers();
 
 
 	//ステージクリアーかチェック

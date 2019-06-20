@@ -44,9 +44,6 @@ public:
 	void drawPlayers() const;
 	bool clearCheck() const;
 	void movePlayers() const;
-	void proceedBombTime();
-	void putBomb(Player* player);
-	void fireBomb(Player* player);
 private:
 	void setSize(int width, int height);
 
@@ -57,7 +54,5 @@ private:
 	Player* mPlayer1; 
 	Player* mPlayer2;
 	Player** mEnemys;
-	Bomb** mBombs;
-	int mNumOfBomb;
 	int mNumOfEnemy;
  };
