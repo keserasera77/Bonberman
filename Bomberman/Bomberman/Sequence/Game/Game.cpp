@@ -7,6 +7,7 @@
 #include "Sequence/Game/GameParent.h"
 
 #include "State.h"
+#include "Object.h"
 
 using namespace GameLib;
 
@@ -25,27 +26,28 @@ Game::~Game() {}
 Child* Game::update(Parent* parent) {
 	Framework f = Framework::instance();
 	Child* next = this;
+	State* state = parent->getState();
 
 	if (f.isKeyTriggered(' ')) {
 		next = new Pause();
 		return next;
 	}
 
-	parent->getState()->update(parent);
-	parent->getState()->drawStage();
+	state->update(parent);
+	state->drawStage();
 
 
 	//ステージクリアーかチェック
-	if (parent->getState()->clearCheck()) {
+	if (parent->isMode1P() && (state->clearCheck() || f.isKeyTriggered('c'))) {
 		next = new Clear;
 	};
 
-	if (f.isKeyTriggered('f')/*failure 未定*/) {
+	if ((parent->isMode1P() && (state->failureCheck()) || f.isKeyTriggered('f'))) {
 	  next = new Failure(parent);
 	}
 
-	if (f.isKeyTriggered('r')/*result 未定*/) {
-		next = new Result;
+	if ((parent->isMode2P() && (state->resultCheck()) || f.isKeyTriggered('r'))) {
+		next = new Result(state->resultCheck());
 	}
 
 	return next;

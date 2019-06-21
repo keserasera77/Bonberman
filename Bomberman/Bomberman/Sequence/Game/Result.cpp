@@ -12,13 +12,19 @@ namespace Game {
 
 class Child;
 
-Result::Result() : mCursor(0) {
+Result::Result(int result) : mCursor(0) {
   mImage = new Image("Image/result.dds"); 
 
 	const char* strs[2] = { "Go To Title", "Continue" };
 	Font::create("Image/font.dds",9,12,0xff,strs,2,13,false);
 	initScreen(Font::instance());
 	Font::instance()->drawString(9 - 1, 12, ">", 0xff);
+
+	//Œ‹‰Ê”­•\
+	mResult = result;
+	Font::instance()->drawString(10, 10, "Winner : ", 0xff);
+	if (result == 1)  Font::instance()->drawString(19, 10, "1P", 0xff);
+	if (result == 2)  Font::instance()->drawString(19, 10, "2P", 0xff);
 
 }
 
@@ -43,6 +49,10 @@ Child* Result::update(Parent* parent) {
 	  mCursor = (mCursor + 1) % 2;
 		initScreen(Font::instance());
 		Font::instance()->drawString(9-1+ mCursor*13,12,">",0xff);
+
+			Font::instance()->drawString(10, 10, "Winner : ", 0xff);
+	if (mResult == 1)  Font::instance()->drawString(19, 10, "1P", 0xff);
+	if (mResult == 2)  Font::instance()->drawString(19, 10, "2P", 0xff);
 	}
 
 	if (mCursor == 0) {

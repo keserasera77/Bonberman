@@ -11,11 +11,13 @@ class Parent;
 
 class Result : public Child {
 public:
-  Result(); 
+  Result(int reult); 
 	~Result();
 	Child* update(Parent*);
 private:
   void initScreen(Font* font);
+
+	int mResult;
   Image* mImage;
 	int mCursor;
 };

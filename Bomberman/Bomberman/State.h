@@ -42,8 +42,13 @@ public:
 	void update(Sequence::Game::Parent* parent);
 	void drawStage() const;
 	void drawPlayers() const;
-	bool clearCheck() const;
-	void movePlayers() const;
+	void moveEnemys();
+	//1P‚Ì‚Ý
+	bool failureCheck();
+	bool clearCheck();
+	void fireEnemys();
+	//2P‚Ì‚Ý
+	int resultCheck();
 private:
 	void setSize(int width, int height);
 

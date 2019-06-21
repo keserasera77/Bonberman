@@ -32,13 +32,15 @@ void Image::drawPicture(
 
 	//画像の位置をsrcX,srcYで特定
 	for (int y = 0; y < height; y++) {
+	  int dy = y + dstY, sy = y + srcY;
 		for (int x = 0; x < width; x++) {
-			//画面範囲チェック
-			if ((y + dstY) * windowWidth + (x + dstX) < 0) break;
-			if ((y + dstY) * windowWidth + (x + dstX) >= windowHeight * windowWidth) break;
+			int dx = x + dstX, sx = x + srcX;
 
-			unsigned src = mData[(y + srcY) * mWidth + (x + srcX)];
-			unsigned* dst = &vram[(y + dstY) * windowWidth + (x + dstX)];
+			//画面範囲チェック
+			if ((0 > dx) || dx >= windowWidth || 0 > dy  || dy >= windowHeight ) break;
+
+			unsigned src = mData[sy * mWidth + sx];
+			unsigned* dst = &vram[dy * windowWidth + dx];
 			unsigned srcA = (src & 0xff000000) >> 24;
 			unsigned srcR = src & 0xff0000;
 			unsigned srcG = src & 0x00ff00;

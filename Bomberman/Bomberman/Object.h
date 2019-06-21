@@ -69,6 +69,8 @@ public:
 	void plusMaxBomb();
 	int fire() const { return mFire; }
 	void plusFire();
+	void eraseFire(Array2D<Object>& obj, int i, int x, int y, int flag);
+	void drawFire(Array2D<Object>& obj, int i, int x, int y, int flag);
 	void putBomb(Array2D<Object>& obj);
 	void fireBomb(Array2D<Object>& obj);
 	void proceedBombTime();
@@ -78,7 +80,16 @@ public:
 
 
 	void draw(const Image* image) const;
-	void move();
+	void move(Array2D<Object>& obj,int dX,int dY);
+	bool isCollided(Array2D<Object>& obj, int dX, int dY, Object::ObjID id) const;
+	bool isCollidedWithObject(Array2D<Object>& obj, int dX, int dY) const;
+	bool isCollidedWithPlayer(int dX, int dY, Player* player) const;
+	bool isCollidedWithEnemys(int dX, int dY, Player** enemys, int numOfEnemys) const;
+	void pickItem(Array2D<Object>& obj, Object::ObjID id);
+	bool isFired(Array2D<Object>& obj) const;
+	void die();
+	bool isDead() const { return mIsDead; }
+
 private:
 	Object::ImageID mId;
 	int mX;
@@ -90,6 +101,8 @@ private:
 
 	int mHaveBomb;
 	Bomb** mBombs;
+
+	bool mIsDead;
 };
 
 class Bomb {

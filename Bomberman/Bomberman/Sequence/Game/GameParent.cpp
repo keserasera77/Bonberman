@@ -59,6 +59,14 @@ Parent::Mode Parent::mode() const{
 	return mMode;
 }
 
+bool Parent::isMode1P() const {
+  return (mMode == MODE_1P);
+}
+
+bool Parent::isMode2P() const {
+	return (mMode == MODE_2P);
+}
+
 void Parent::moveTo(NextSequence next) {
 	mNextSequence = next;
 }

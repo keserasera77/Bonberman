@@ -35,8 +35,12 @@ public:
 	State* getState() const;
   void initState();
 	Mode mode() const;
+	bool isMode1P() const;
+	bool isMode2P() const;
 	int life() const;
 	void decrementLife();
+
+
 
 private:
 	NextSequence mNextSequence;
