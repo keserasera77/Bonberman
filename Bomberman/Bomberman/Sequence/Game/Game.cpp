@@ -36,17 +36,27 @@ Child* Game::update(Parent* parent) {
 	state->update(parent);
 	state->drawStage();
 
+	//デバグ用
+	#ifndef NDEBUG
+
+	if (parent->isMode1P() && f.isKeyTriggered('c')) next = new Clear;
+	if (parent->isMode1P() && f.isKeyTriggered('f')) next = new Failure(parent);
+	if (parent->isMode2P() && f.isKeyTriggered('r')) next = new Result(1);
+	if (parent->isMode2P() && f.isKeyTriggered('t')) next = new Result(2);
+
+	#endif
+
 
 	//ステージクリアーかチェック
-	if (parent->isMode1P() && (state->clearCheck() || f.isKeyTriggered('c'))) {
+	if (parent->isMode1P() && state->clearCheck()) {
 		next = new Clear;
 	};
 
-	if ((parent->isMode1P() && (state->failureCheck()) || f.isKeyTriggered('f'))) {
+	if (parent->isMode1P() && state->failureCheck()) {
 	  next = new Failure(parent);
 	}
 
-	if ((parent->isMode2P() && (state->resultCheck()) || f.isKeyTriggered('r'))) {
+	if (parent->isMode2P() && state->resultCheck()) {
 		next = new Result(state->resultCheck());
 	}
 

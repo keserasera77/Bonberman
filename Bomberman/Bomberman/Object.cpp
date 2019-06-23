@@ -83,7 +83,7 @@ Player::Player(Object::ImageID id, int width, int height, int x, int y) : mId(id
 }
 
 Player::~Player() {
-	//SAFE_DELETE_ARRAY(mBombs); //!(nextSizeWithFlagDebug & FLAG_PREV_EMPTY) の原因っぽい
+	SAFE_DELETE_ARRAY(mBombs); //!(nextSizeWithFlagDebug & FLAG_PREV_EMPTY) の原因っぽい
 	/*
 	for (int i = 0, cnt = 0; cnt < mMaxBomb - mHaveBomb; i++) {
 		if (mBombs[i] != 0) {
@@ -136,7 +136,7 @@ void Player::proceedBombTime() {
 	}
 }
 
-void Player::drawFire(Array2D<Object>& obj, int i, int x, int y, int flag) {
+void Player::drawFire(Array2D<Object>& obj, Bomb* bomb, int x, int y, int flag) {
   if (flag != 1 && flag != 2 && flag != 4 && flag != 8) ASSERT(false && "illegal flag : Player::drawFire");
 	int dx = 0, dy = 0;
 	Object::ObjID fireid = Object::OBJ_FIRE_BOTH;
@@ -145,21 +145,22 @@ void Player::drawFire(Array2D<Object>& obj, int i, int x, int y, int flag) {
 	else if (flag == 4) {dy += 1; fireid = Object::OBJ_FIRE_HEIGHT;}
 	else if (flag == 8) {dy -= 1; fireid = Object::OBJ_FIRE_HEIGHT;}
 
-	x += dx; y += dy;
+	//x += dx; y += dy;
 
-	for (int j = 1; j <= mBombs[i]->fire() && obj(x, y).id() != Object::OBJ_WALL; j++, x += dx, y += dy) {
-		bool cond = obj(x, y).id() == Object::OBJ_BLOCK || obj(x, y).id() == Object::OBJ_FIRE_UP || obj(x, y).id() == Object::OBJ_BOMB_UP;
+	for (int j = 1; j <= bomb->fire() && obj(x, y).id() != Object::OBJ_WALL; j++, x += dx, y += dy) {
+		bool cond1 = obj(x + dx, y + dy).id() == Object::OBJ_BLOCK;
+		bool cond2 = obj(x, y).id() == Object::OBJ_FIRE_UP || obj(x, y).id() == Object::OBJ_BOMB_UP;
 		obj(x, y).set(fireid);
-		if (cond) {
-			if (obj(x, y).id() == Object::OBJ_BLOCK) mBombs[i]->flagItem(flag); //フラグを立てる
+		if (cond1 || cond2) {
+			if (cond1) bomb->flagItem(flag); //フラグを立てる
 			break;
 		}
 	}
 }
 
-void Player::eraseFire(Array2D<Object>& obj, int i, int x, int y, int flag) {
+void Player::eraseFire(Array2D<Object>& obj, Bomb* bomb, int x, int y, int flag) {
 	if (flag != 1 && flag != 2 && flag != 4 && flag != 8) ASSERT(false && "illegal flag : Player::drawFire");
-	int p = 30; //アイテムが落ちる確率　単位は%
+	int p = 50; //アイテムが落ちる確率　単位は%
 	int dx = 0, dy = 0;
 	Object::ObjID fireid = Object::OBJ_FIRE_BOTH;
 	if (flag == 1) { dx += 1; fireid = Object::OBJ_FIRE_WIDTH; }
@@ -169,17 +170,19 @@ void Player::eraseFire(Array2D<Object>& obj, int i, int x, int y, int flag) {
 
 	x += dx; y += dy;
 
-	for (;obj(x, y).id() == fireid; x += dx, y += dy) {
-		Object::ObjID id = Object::OBJ_SPACE;
+	while (obj(x, y).id() == fireid) {
+		obj(x, y).set(Object::OBJ_SPACE);
+		x += dx; y += dy;
+	}
 
-		if ((mBombs[i]->itemFlag() & flag) && obj(x + dx, y + dy).id() != fireid) {//炎の先端にアイテムを落とす
-			//各アイテムが落ちる確率を等しくしている 上下左右で同じことをしている
-			if (percent(p)) id = Object::OBJ_FIRE_UP;
-			else if (percent(100 * p / (100 - p))) id = Object::OBJ_BOMB_UP;
-		}
+	if ((bomb->itemFlag() & flag) && obj(x, y).id() == Object::OBJ_BLOCK) { //炎の先端にアイテムを落とす
+	  Object::ObjID id = Object::OBJ_SPACE;
+
+		//各アイテムが落ちる確率を等しくしている
+		if (percent(p)) id = Object::OBJ_FIRE_UP;
+		else if (percent(100 * p / (100 - p))) id = Object::OBJ_BOMB_UP;
 
 		obj(x, y).set(id);
-
 	}
 }
 
@@ -190,23 +193,25 @@ void Player::fireBomb(Array2D<Object>& obj) {
 
 			if (mBombs[i]->time() >= 3000) { //消火条件
 
-				obj(x,y).set(Object::OBJ_SPACE);
-				eraseFire(obj, i, x, y, 1);
-				eraseFire(obj, i, x, y, 2);
-				eraseFire(obj, i, x, y, 4);
-				eraseFire(obj, i, x, y, 8);
+				eraseFire(obj, mBombs[i], x, y, 1);
+				eraseFire(obj, mBombs[i], x, y, 2);
+				eraseFire(obj, mBombs[i], x, y, 4);
+				eraseFire(obj, mBombs[i], x, y, 8);
+
+				obj(x, y).set(Object::OBJ_SPACE);
 
 				mHaveBomb++;
 				SAFE_DELETE(mBombs[i]);
 			}
 			else if (mBombs[i]->time() >= 2000 && obj(x,y).id() != Object::OBJ_FIRE_BOTH) { //発火条件 発火は一回
 
-				cout << mBombs[i]->time() << " ms : in 2000 !!!" << endl;
+				//cout << mBombs[i]->time() << " ms : in 2000 !!!" << endl;
+				drawFire(obj, mBombs[i], x, y, 1);
+				drawFire(obj, mBombs[i], x, y, 2);
+				drawFire(obj, mBombs[i], x, y, 4);
+				drawFire(obj, mBombs[i], x, y, 8);
+
 				obj(x, y).set(Object::OBJ_FIRE_BOTH);
-				drawFire(obj, i, x, y, 1);
-				drawFire(obj, i, x, y, 2);
-				drawFire(obj, i, x, y, 4);
-				drawFire(obj, i, x, y, 8);
 			}
 			cnt++; /**/
 		}
@@ -225,7 +230,7 @@ void Player::move(Array2D<Object>& obj,int dX, int dY) {
 }
 
 void Player::pickItem(Array2D<Object>& obj, Object::ObjID id) {
-  if (id != Object::OBJ_FIRE_UP && id != Object::OBJ_BOMB_UP) ASSERT(false && "id is Not item");
+  ASSERT(id == Object::OBJ_FIRE_UP || id == Object::OBJ_BOMB_UP && "id is Not item");
 	Object& objLU = obj(mX / CELL_EDGE, mY / CELL_EDGE);
 	Object& objRU = obj((mX + CELL_EDGE - 1) / CELL_EDGE, mY / CELL_EDGE);
 	Object& objLD = obj(mX / CELL_EDGE, (mY + CELL_EDGE - 1) / CELL_EDGE);
@@ -248,28 +253,58 @@ void Player::pickItem(Array2D<Object>& obj, Object::ObjID id) {
 
 }
 
-bool Player::isCollided(Array2D<Object>& obj, int dX,int dY, Object::ObjID id) const {
-  Object::ObjID lu = obj((mX + dX) / CELL_EDGE,(mY + dY) / CELL_EDGE).id(); //left up
-	Object::ObjID ru = obj((mX + dX + CELL_EDGE - 1) / CELL_EDGE, (mY + dY) / CELL_EDGE).id();
-	Object::ObjID ld = obj((mX + dX) / CELL_EDGE, (mY + dY + CELL_EDGE - 1) / CELL_EDGE).id();
-	Object::ObjID rd = obj((mX + dX + CELL_EDGE - 1) / CELL_EDGE, (mY + dY + CELL_EDGE - 1) / CELL_EDGE).id();
+//0 当たってない 1,lu 2,ru 3,rd 4,ld に当たってる	5 2か所以上で接触している
+int Player::isCollided(Array2D<Object>& obj, int dX,int dY, Object::ObjID id) const {
+  Object::ObjID lu = obj((mX + dX) / CELL_EDGE                 , (mY + dY) / CELL_EDGE                ).id(); //left up
+	Object::ObjID ru = obj((mX + dX + CELL_EDGE - 1) / CELL_EDGE , (mY + dY) / CELL_EDGE                ).id();
+	Object::ObjID ld = obj((mX + dX) / CELL_EDGE                 , (mY + dY + CELL_EDGE - 1) / CELL_EDGE).id();
+	Object::ObjID rd = obj((mX + dX + CELL_EDGE - 1) / CELL_EDGE , (mY + dY + CELL_EDGE - 1) / CELL_EDGE).id();
 
-	/*
-	cout << "mX = " << mX << ", mY = " << mY << endl;
-	cout << "dX = " << dX << ", dY = " << dY << endl;
-	cout << (mX + dX + CELL_EDGE - 1) / CELL_EDGE << " " << (mY + dY + CELL_EDGE - 1) / CELL_EDGE << endl;
-	cout << "lu = " << lu << ", ru = " << ru << ", ld = " << ld << ", rd = " << rd << endl;
-	cout << "wall = " << wall << endl << endl;
-	*/
-
-	return (lu == id || ru == id || ld == id || rd == id);
+	if (lu == id) {
+	  if (ru != id && ld != id && rd != id) return 1; //lu == id && ru != id && rd != id && ld != id
+		return 5;
+	}
+	else if (ru == id) {
+	  if (ld != id && rd != id) return 2; // lu != id && ru == id && rd != id && ld != id
+		return 5;
+	}
+	else if (rd == id) {
+	 if (ld != id) return 3; // lu != id && ru != id && rd == id && ld != id
+	 return 5;
+	}
+	else if (ld == id) {
+		return 4;  // lu != id && ru != id && ld != id && rd == id
+	}
+	else return 0; // lu != id && ru != id && ld != id && rd != id
 }
 
-bool Player::isCollidedWithObject(Array2D<Object>& obj, int dX, int dY) const {
+bool Player::isCollidedWithObject(Array2D<Object>& obj, int dX, int dY) {
+  bool result = false;
+  int margin = CELL_EDGE / 2; //滑る範囲をどのあたりまでにするか 0 <= margin < CELL_EDGE
+
+	//dX = 0, dY = 0 では以下の3つはtrueにならない
   bool wall  = !isCollided(obj, 0, 0, Object::OBJ_WALL) && isCollided(obj, dX, dY, Object::OBJ_WALL); 
   bool block = !isCollided(obj, 0, 0, Object::OBJ_BLOCK) && isCollided(obj, dX, dY, Object::OBJ_BLOCK);
 	bool bomb  = !isCollided(obj, 0, 0, Object::OBJ_BOMB) && isCollided(obj, dX, dY, Object::OBJ_BOMB);
-	return wall || block || bomb;
+
+	//壁と接触したときに滑る処理
+	     if (dX <= -1 && dY == 0  && (mY % CELL_EDGE) >= (CELL_EDGE - margin) /*luが下のほう*/ && isCollided(obj, dX, dY, Object::OBJ_WALL) == 1) mY += 1;
+	else if (dX == 0  && dY >= -1 && (mX % CELL_EDGE) >= (CELL_EDGE - margin) /*luが右のほう*/ && isCollided(obj, dX, dY, Object::OBJ_WALL) == 1) mX += 1;
+	else if (dX >= 1  && dY == 0  && (mY % CELL_EDGE) >= (CELL_EDGE - margin) /*ruが下のほう*/ && isCollided(obj, dX, dY, Object::OBJ_WALL) == 2) mY += 1;
+	else if (dX == 0  && dY >= -1 && (mX % CELL_EDGE) < margin                /*ruが左のほう*/ && isCollided(obj, dX, dY, Object::OBJ_WALL) == 2) mX -= 1;
+	else if (dX >= 1  && dY == 0  && (mY % CELL_EDGE) < margin                /*rdが上のほう*/ && isCollided(obj, dX, dY, Object::OBJ_WALL) == 3) mY -= 1;
+	else if (dX == 0  && dY <= 1  && (mX % CELL_EDGE) < margin                /*rdが左のほう*/ && isCollided(obj, dX, dY, Object::OBJ_WALL) == 3) mX -= 1;
+	else if (dX <= -1 && dY == 0  && (mY % CELL_EDGE) < margin                /*ldが上のほう*/ && isCollided(obj, dX, dY, Object::OBJ_WALL) == 4) mY -= 1;
+	else if (dX == 0  && dY <= 1  && (mX % CELL_EDGE) >= (CELL_EDGE - margin) /*ldが右のほう*/ && isCollided(obj, dX, dY, Object::OBJ_WALL) == 4) mX += 1;
+	else result = result || wall || bomb || block;
+
+	/*
+	cout << "dX = " << dX << ", dY = " << dY << endl;
+	cout << "mX % CELL_EDGE = " << (mX % CELL_EDGE) << endl;
+	cout << "isCollided(obj, dX, dY, Object::OBJ_WALL) = " << isCollided(obj, dX, dY, Object::OBJ_WALL) << endl << endl;
+	*/
+	return result;
+	
 }
 
 bool Player::isCollidedWithPlayer(int dX, int dY, Player* player) const {
@@ -289,9 +324,11 @@ bool Player::isCollidedWithPlayer(int dX, int dY, Player* player) const {
 	bool ru = (l2 <= r) && (r <= r2) && (u2 <= u) && (u <= d2);
 	bool rd = (l2 <= r) && (r <= r2) && (u2 <= d) && (d <= d2);
 
+	/*
 	cout << "l = " << l << ", u = " << u << ", r = " << r << ", d = " << d << endl;
 	cout << "l2 = " << l2 << ", u2 = " << u2 << ", r2 = " << r2 << ", d2 = " << d2 << endl;
 	cout << "lu = " << lu << ", ld = " << ld << ", ru = " << ru << ", rd = " << rd << endl << endl;
+	*/
 
 	return (lu || ld || ru || rd);
 }

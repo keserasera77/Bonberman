@@ -17,6 +17,9 @@ State::State(SG::Parent* parent) : mStageWidth(9), mStageHeight (7), mPlayer1(0)
 	mObjects.setSize(mStageWidth, mStageHeight);
 
 	//ステージ自動生成
+	int blockRate = 80;
+	int enemyRate = 40;
+
 	for (int y = 0 ; y < mStageHeight; y++) {
 		for (int x = 0; x < mStageWidth; x++) {
 			Object& o = mObjects(x, y);
@@ -27,10 +30,10 @@ State::State(SG::Parent* parent) : mStageWidth(9), mStageHeight (7), mPlayer1(0)
 			else if ((x == 1 && y == 1) || (x == 1 && y == 2) || (x == 2 && y == 1)) o.set(Object::OBJ_SPACE); //1Pの居場所
 			else if ((parent->isMode2P()) && (x == mStageWidth-2 && y == mStageHeight-2 || x == mStageWidth-2 && y == mStageHeight-3 || x == mStageWidth-3 && y == mStageHeight-2)) o.set(Object::OBJ_SPACE); //2Pの居場所
 			//その他
-			else if (percent(85)) o.set(Object::OBJ_BLOCK);
+			else if (percent(blockRate)) o.set(Object::OBJ_BLOCK);
 			else { 
 			  o.set(Object::OBJ_SPACE);
-				if (percent(40) && parent->isMode1P()){
+				if (percent(enemyRate) && parent->isMode1P()){
 				  mEnemys[mNumOfEnemy] = new Player(Object::IMAGE_ID_ENEMY, mStageWidth, mStageHeight, x, y);
 				  mNumOfEnemy++;
 				}
@@ -45,7 +48,7 @@ State::State(SG::Parent* parent) : mStageWidth(9), mStageHeight (7), mPlayer1(0)
 		for (int y = 2, i = 0; y < mStageHeight - 2; y++) {
 			for (int x = 2; x < mStageWidth - 2; x++,i++) {
 			  //全てのマスが等確立で選ばれる。必ずどれかのマスは選ばれる。
-				if (percent(1 / ((N+1) - i))) {
+				if (percent(100 / ((N+1) - i))) {
 				  cout << "Enemy Safty" << endl;
 					mObjects(x, y).set(Object::OBJ_SPACE);
 					mEnemys[mNumOfEnemy] = new Player(Object::IMAGE_ID_ENEMY, mStageWidth, mStageHeight, x, y);
@@ -190,9 +193,7 @@ void State::update(SG::Parent* parent) {
 		else if (f.isKeyOn('i')) { dX2 = 0; dY2 = -1; }
 		else if (f.isKeyOn('k')) { dX2 = 0; dY2 = 1; }
 
-		cout << "2P" << endl;
 		canMove2P = canMove2P && !mPlayer2->isCollidedWithObject(mObjects, dX2, dY2) && !mPlayer2->isCollidedWithPlayer(dX2, dY2, mPlayer1);
-		cout << "1P" << endl;
 		canMove1P = canMove1P && !mPlayer1->isCollidedWithPlayer(dX1, dY1, mPlayer2);
 
 		if (mPlayer2->isFired(mObjects)) mPlayer2->die();

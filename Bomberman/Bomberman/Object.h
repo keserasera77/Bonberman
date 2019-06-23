@@ -69,8 +69,8 @@ public:
 	void plusMaxBomb();
 	int fire() const { return mFire; }
 	void plusFire();
-	void eraseFire(Array2D<Object>& obj, int i, int x, int y, int flag);
-	void drawFire(Array2D<Object>& obj, int i, int x, int y, int flag);
+	void eraseFire(Array2D<Object>& obj, Bomb* bomb, int x, int y, int flag);
+	void drawFire(Array2D<Object>& obj, Bomb* bomb, int x, int y, int flag);
 	void putBomb(Array2D<Object>& obj);
 	void fireBomb(Array2D<Object>& obj);
 	void proceedBombTime();
@@ -81,8 +81,8 @@ public:
 
 	void draw(const Image* image) const;
 	void move(Array2D<Object>& obj,int dX,int dY);
-	bool isCollided(Array2D<Object>& obj, int dX, int dY, Object::ObjID id) const;
-	bool isCollidedWithObject(Array2D<Object>& obj, int dX, int dY) const;
+  int isCollided(Array2D<Object>& obj, int dX, int dY, Object::ObjID id) const; //0 “–‚½‚Á‚Ä‚È‚¢ 1,lu 2,ru 3,rd 4,ld ‚É“–‚½‚Á‚Ä‚é
+	bool isCollidedWithObject(Array2D<Object>& obj, int dX, int dY);
 	bool isCollidedWithPlayer(int dX, int dY, Player* player) const;
 	bool isCollidedWithEnemys(int dX, int dY, Player** enemys, int numOfEnemys) const;
 	void pickItem(Array2D<Object>& obj, Object::ObjID id);
