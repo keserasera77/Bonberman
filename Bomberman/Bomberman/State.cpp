@@ -78,7 +78,12 @@ State::~State() {
 	SAFE_DELETE(mImage); //画像データ
 	SAFE_DELETE(mPlayer1);
 	SAFE_DELETE(mPlayer2);
-  SAFE_DELETE_ARRAY(mEnemys);
+	for (int i = 0, cnt = 0; cnt < mNumOfEnemy; i++) {
+		if (mEnemys[i] != 0) {
+			SAFE_DELETE(mEnemys[i]);
+			cnt++;
+		}
+	}
 }
 
 void State::setSize(int width, int height) {
@@ -100,7 +105,14 @@ void State::drawPlayers() const {
 
 	mPlayer1->draw(mImage);
 	if (mPlayer2 != 0) mPlayer2->draw(mImage);
-	for (int i = 0; mEnemys[i] != 0 ; i++) mEnemys[i]->draw(mImage);
+
+	int cnt = 0;
+	for (int i = 0; cnt < mNumOfEnemy ; i++) {
+	  if (mEnemys[i] != 0) {
+		    mEnemys[i]->draw(mImage);
+			  cnt++;
+			}
+		}
 	
 }
 

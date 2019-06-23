@@ -22,19 +22,23 @@
 エラーではないが終了時にメモリが残るのが気になる。恐らくボムを追加してから。場合によって出たりでなかったりする。
 6/21 永遠に右のようなものが出る　04FFF344		0		unknown		0
 6/22 試合中に'q'で終了するとなる気がする
+6/23 なんか気づいたら出なくなってる。怖い。
 
- !(nextSizeWithFlagDebug & FLAG_PREV_EMPTY)という（恐らく本書のフレームワークの）例外が起こる。
+ ok !(nextSizeWithFlagDebug & FLAG_PREV_EMPTY)という（恐らく本書のフレームワークの）例外が起こる。
  6/19 たくさんボムを置いた試合で、メニュー から'd'を押すと起こる印象。ほかにも条件ありそう。
  6/20 上のエラーはボムの管理の仕方が悪いことが原因だということがほぼほぼ確定。Game::~Parentから飛んでる
- 6/23 試合中に'q'で終了するとなる気がする
+ 6/23 取り敢えず、敵に当たって失敗するとfailure画面が出たのちにReadyに行かずに起こる。
+     ログを見た結果をまとめると、Game::~Parent, ~State, Game::Parent::setStateから検出されており、SAFE_DELETEの乱用が原因だと思われる。
 
- Bomb::proceedTime()がthisの読み取り違反を起こすというエラーも発生。ボムの管理の仕方を変える理由が増えた。しかし、いい方法は思いついていない。
- 6/19 ボムを置きまくる
+
+ ok Bomb::proceedTime()がthisの読み取り違反を起こすというエラーも発生。ボムの管理の仕方を変える理由が増えた。しかし、いい方法は思いついていない。
+ 6/19 ボムを置きまくると起こる
  6/21 Player::putBomb内の　if (cnt >= mHaveBomb - mHaveBomb) mBombs[i + 1] = 0; を if (cnt >= mMaxBomb - mHaveBomb) mBombs[i + 1] = 0;　に修正。　恐らく直った。
  (修正完了(?))
 
 例外がスローされました:読み取りアクセス違反。 GameLib::`anonymous namespace'::cast<unsigned int>(...) が 0x9FFE864 を返しました
 6/21 タイトルへ戻るとき。等　もう少し前から同じようなエラーがあった気がするが覚えてない…
+6/23 !(nextSizeWithFlagDebug & FLAG_PREV_EMPTY)と同じタイミングで起こることがあり、同様の方法で解決した。
 
 例外がスローされました:書き込みアクセス違反。 **this** が 0x1FA2338 でした。 (State内でObject::setを使ったときのエラー)
 6/21 
@@ -58,7 +62,7 @@ namespace GameLib {
 
 	//フレームレート計測
 	 unsigned currentTime = f.time();
-	 if (gCount % 60 == 0) cout << "frameRate :: " << f.frameRate() << " (fps)" << endl;
+	 if ((gCount %= 60) == 0) cout << "frameRate :: " << f.frameRate() << " (fps)" << endl;
 	 gCount++;
 	 //f.setFrameRate(60) // 固定フレームレート
 

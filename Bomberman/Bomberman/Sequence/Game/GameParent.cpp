@@ -24,7 +24,6 @@ Parent::Parent(Mode mode) : mStageData(0), mStageSize(0), mStageName(0), mLife(3
 	File stage("StageData/stageData1.txt");
 	setStage(stage.data(), stage.size());
 	initState();
-	mState->drawStage();
 	mChild = new Ready(mState);
   //mStageName = filename;
 }
@@ -34,14 +33,15 @@ Parent::~Parent() {
 	SAFE_DELETE(mState);
 }
 
-const char* Parent::stageName() const{
+const char* Parent::stageName() const {
 	return mStageName;
 }
 
 void Parent::setState(State* state) {
-  SAFE_DELETE(mState);
+  //SAFE_DELETE(mState); //‚±‚±‚ªŒ´ˆö‚ÅƒGƒ‰[‚ªo‚Ä‚é
 	mState = state;
 }
+
 State* Parent::getState() const{
 	return mState;
 }
